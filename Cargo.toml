@@ -11,6 +11,9 @@ rustflags = ["C", "link-arg=fuse-ld=/opt/homebrew/bin/zld"]
 actix-web = "4"
 tokio = { vesion = "1", features = ["macros", "rt-multi-thread"] }
 
+[dev-dependencies] # not included in packaged binary
+reqwest = "0.11"
+
 [[bin]]
 path = "src/main.rs"
 name = "newsletter"
