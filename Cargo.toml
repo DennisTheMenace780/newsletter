@@ -9,6 +9,7 @@ rustflags = ["C", "link-arg=fuse-ld=/opt/homebrew/bin/zld"]
 
 [dependencies]
 actix-web = "4"
+serde = {version = "1.0.163", features = ["derive"]}
 tokio = { vesion = "1", features = ["macros", "rt-multi-thread"] }
 
 [dev-dependencies] # not included in packaged binary

@@ -14,4 +14,34 @@ There are some instances though where using Tokio is not appropriate:
 
   - Sending a single web request. The place where Tokio gives you an advantage is when you need to do many things at the same time. If you need to use a library intended for asynchronous Rust such as reqwest, but you don't need to do a lot of things at once, you should prefer the blocking version of that library, as it will make your project simpler. Using Tokio will still work, of course, but provides no real advantage over the blocking API. If the library doesn't provide a blocking API, see the chapter on bridging with sync code.
 
+### After the health_check() integration test on Pg 42...
+Collecting data via HTML form requires that we encode the body of the message. While many such encodings exist we will use:
+  - `application/x-www-form-urlencoded`
 
+Example: If the name is Dennis Gray, and the email is djgray780@gmail.com, the POST body should be:
+  - `name=dennis%20/gray&email=djgray780%40gmail.com`
+
+So, if we get a valid name and email with the correct encoding format, then the server should respond with a 200 OK. Otherwise, return a 400 bad request.
+
+## Extractors 
+The framework provides something called an `Extractor` that allows us to "extract" a piece of data from a web request.
+
+Code snippet below 
+```rust
+use actix_web::{HttpResponse};
+use std::net::TcpListener;
+use serde::Deserialize;
+// Extractors
+use actix_web::web::Form;
+
+pub async fn subscribe(Form(form): Form<Info>) -> HttpResponse {
+    HttpResponse::Ok().finish()
+}
+
+#[derive(Deserialize)]
+pub struct Info {
+    email: String,
+    body: String,
+}
+```
+Left off at section 3.8 Storing Data.
