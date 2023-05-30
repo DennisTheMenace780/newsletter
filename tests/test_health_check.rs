@@ -1,3 +1,4 @@
+use newsletter::startup::run;
 use std::net::TcpListener;
 
 #[tokio::test]
@@ -80,7 +81,7 @@ fn spawn_app() -> String {
         .port();
     // Once we know that active port we can pass the listener into the server and
     // run the application as a background Tokio task.
-    let server = newsletter::run(listener).expect("Failed to bind address");
+    let server = run(listener).expect("Failed to bind address");
     let _ = tokio::spawn(server);
     format!("http://127.0.0.1:{}", port)
 }
