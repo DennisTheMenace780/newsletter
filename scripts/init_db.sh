@@ -32,7 +32,7 @@ CONTAINER_NAME="rust-newsletter-db"
 # If SKIP_DOCKER is empty the condition evaluates to true
 if [[ -z "${SKIP_DOCKER}" ]]; then
 	docker run \
-        --name ${CONTAINER_NAME}
+        --name ${CONTAINER_NAME} \
 		-e POSTGRES_USER=${DB_USER} \
 		-e POSTGRES_PASSWORD=${DB_PASSWORD} \
 		-e POSTGRES_DB=${DB_NAME} \
@@ -41,13 +41,7 @@ if [[ -z "${SKIP_DOCKER}" ]]; then
 		postgres -N 1000
 fi
 
-# An entry like 0.0.0.0:5069->5069/tcp, 5432/tcp in the "PORTS" column of the `docker ps --all` output indicates two port mappings for the container.
-#
-# 0.0.0.0:5069->5069/tcp: This means that port 5069 inside the container is being mapped to port 5069 on the host system using the TCP protocol. The IP address 0.0.0.0 in this context represents all available network interfaces on the host system. So, any incoming requests on port 5069 of the host system will be forwarded to the container.
-#
-# 5432/tcp: This entry indicates that port 5432 inside the container is exposed, but it is not explicitly mapped to a port on the host system. In this case, the container's service on port 5432 is only accessible from within the container itself or from other containers in the same Docker network. To access this service from the host system or external network, you would need to establish some additional network configuration, such as using Docker's network features or container linking.
-#
-# Overall, with the given entry, you can access the service running on port 5069 of the container by using localhost:5069 or <host-ip>:5069 on your host system. However, to access the service on port 5432, you would need to consider additional networking configurations.
+# An entry like 0.0.0.0:5069->5432/tcp in the "PORTS" column of the `docker ps --all` output indicates that the container is bound to all available network interfaces on the host machine, and 5069 is the port on the host that maps to the container. In this case any traffic coming through port 5069 will be sent to port 5432 in the docker container via TCP. Port 5432 is the port where Postgres run.
 
 until docker inspect --format {{.State.Running}} ${CONTAINER_NAME}; do
 	echo >&2 "Postgres service ${CONTAINER_NAME} is still unavailable -- sleeping "
