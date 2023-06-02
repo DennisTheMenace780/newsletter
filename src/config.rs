@@ -17,6 +17,15 @@ pub struct DatabaseSettings {
     pub host: String,
 }
 
+impl DatabaseSettings {
+    pub fn connection_string(&self) -> String {
+        format!(
+            "postgres://{}:{}@{}:{}/{}",
+            self.username, self.password, self.host, self.port, self.db_name
+        )
+    }
+}
+
 pub fn get_configuration() -> Result<Settings, config::ConfigError> {
     // Since we're using a version of config greater than 12, the documentation recommends using
     // the builder pattern.
