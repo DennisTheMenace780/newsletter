@@ -29,31 +29,32 @@ DB_PORT="${POSTGRES_PORT:=5069}"
 DB_HOST="${POSTGRES_HOST:=localhost}"
 CONTAINER_NAME="rust-newsletter-db"
 
-# If SKIP_DOCKER is empty the condition evaluates to true
+# Allow to skip Docker if a dockerized Postgres database is already running
 if [[ -z "${SKIP_DOCKER}" ]]; then
+	# if a postgres container is running, print instructions to kill it and exit
+	# RUNNING_POSTGRES_CONTAINER=$(docker ps --filter 'name=postgres' --format '{{.ID}}')
+	# if [[ -n $RUNNING_POSTGRES_CONTAINER ]]; then
+	# 	echo >&2 "there is a postgres container already running, kill it with"
+	# 	echo >&2 "    docker kill ${RUNNING_POSTGRES_CONTAINER}"
+	# 	exit 1
+	# fi
+	# Launch postgres using Docker
 	docker run \
-        --name ${CONTAINER_NAME} \
+		--name "rust-newsletter-db" \
 		-e POSTGRES_USER=${DB_USER} \
 		-e POSTGRES_PASSWORD=${DB_PASSWORD} \
 		-e POSTGRES_DB=${DB_NAME} \
 		-p "${DB_PORT}":5432 \
-		-d postgres \
-		postgres -N 1000
+		-d \
+		postgres:14 -N 1000
+	# ^ Increased maximum number of connections for testing purposes
 fi
-
-# An entry like 0.0.0.0:5069->5432/tcp in the "PORTS" column of the `docker ps --all` output indicates that the container is bound to all available network interfaces on the host machine, and 5069 is the port on the host that maps to the container. In this case any traffic coming through port 5069 will be sent to port 5432 in the docker container via TCP. Port 5432 is the port where Postgres run.
-
-until docker inspect --format {{.State.Running}} ${CONTAINER_NAME}; do
-	echo >&2 "Postgres service ${CONTAINER_NAME} is still unavailable -- sleeping "
-	sleep 1
-done
 echo >&2 "Postgres service ${CONTAINER_NAME} is now up and running on port ${DB_PORT}!"
 
 # Export the DATABASE_URL from `sqlx create database --help`
 # See https://www.postgresql.org/docs/15/libpq-connect.html for connection format
 export PGPASSWORD="${DB_PASSWORD}"
 export DATABASE_URL=postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}
-echo ${DATABASE_URL}
 sqlx database create
 sqlx migrate run
 
