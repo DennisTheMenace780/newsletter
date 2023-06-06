@@ -1,5 +1,5 @@
-use newsletter::startup::run;
 use newsletter::config::get_configuration;
+use newsletter::startup::run;
 
 use std::net::TcpListener;
 
