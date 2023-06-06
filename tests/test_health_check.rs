@@ -1,16 +1,21 @@
 use newsletter::{config::get_configuration, startup::run};
-use sqlx::{Connection, PgConnection};
+use sqlx::{Connection, PgConnection, PgPool};
 use std::net::TcpListener;
+
+pub struct TestApp {
+    pub address: String,
+    pub connection_pool: PgPool,
+}
 
 #[tokio::test]
 async fn health_check() {
     // Arrange
     let client = reqwest::Client::new(); // "web browser"
-    let address = spawn_app();
+    let test_app = spawn_app().await;
 
     // Act
     let response = client
-        .get(&format!("{}/health_check", &address))
+        .get(&format!("{}/health_check", &test_app.address))
         .send()
         .await
         .expect("Failed to execute request.");
@@ -23,7 +28,7 @@ async fn health_check() {
 #[tokio::test]
 async fn subscribe_returns_200_for_valid_form_submission() {
     // Arrange
-    let address = spawn_app();
+    let test_app = spawn_app().await;
     let configuration = get_configuration().expect("Failed to read configuration");
     let connection_string = configuration.database.connection_string();
     let mut connection = PgConnection::connect(&connection_string)
@@ -34,7 +39,7 @@ async fn subscribe_returns_200_for_valid_form_submission() {
 
     // Act
     let response = client
-        .post(&format!("{}/subscriptions", &address))
+        .post(&format!("{}/subscriptions", &test_app.address))
         .header("Content-Type", "application/x-www-form-urlencoded")
         .body(encoded_body)
         .send()
@@ -56,7 +61,7 @@ async fn subscribe_returns_200_for_valid_form_submission() {
 #[tokio::test]
 async fn return_400_for_invalid_form_submission() {
     // Arrange
-    let address = spawn_app();
+    let test_app = spawn_app().await;
     let client = reqwest::Client::new();
     let test_cases = vec![
         ("name=dennis%20gray", "missing the email"),
@@ -67,7 +72,7 @@ async fn return_400_for_invalid_form_submission() {
     // Act
     for (invalid_body, error_msg) in test_cases {
         let response = client
-            .post(&format!("{}/subscriptions", &address))
+            .post(&format!("{}/subscriptions", &test_app.address))
             .header("Content-Type", "application/x-www-form-urlencoded")
             .body(invalid_body)
             .send()
@@ -85,7 +90,7 @@ async fn return_400_for_invalid_form_submission() {
     }
 }
 
-fn spawn_app() -> String {
+async fn spawn_app() -> TestApp {
     // The function sets up a TcpListener that waits for requests on IP:PORT.
     // Since we have set a random port, we'll figure out which port the listener is active on.
     let listener = TcpListener::bind("127.0.0.1:0").expect("Failed to bind to random port");
@@ -93,9 +98,18 @@ fn spawn_app() -> String {
         .local_addr()
         .expect("Could not return port number")
         .port();
+    let address = format!("http://127.0.0.1:{}", port);
+
+    let configuration = get_configuration().expect("Failed to read configuration");
+    let connection_pool = PgPool::connect(&configuration.database.connection_string())
+        .await
+        .expect("Failed to connect to Postgres");
     // Once we know that active port we can pass the listener into the server and
     // run the application as a background Tokio task.
-    let server = run(listener).expect("Failed to bind address");
+    let server = run(listener, connection_pool.clone()).expect("Failed to bind address");
     let _ = tokio::spawn(server);
-    format!("http://127.0.0.1:{}", port)
+    TestApp {
+        address,
+        connection_pool,
+    }
 }
