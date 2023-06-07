@@ -33,11 +33,6 @@ async fn health_check() {
 async fn subscribe_returns_200_for_valid_form_submission() {
     // Arrange
     let test_app = spawn_app().await;
-    let configuration = get_configuration().expect("Failed to read configuration");
-    let connection_string = configuration.database.connection_string();
-    let mut connection = PgConnection::connect(&connection_string)
-        .await
-        .expect("Failed to connect to Postgres.");
     let client = reqwest::Client::new();
     let encoded_body = "name=le%20guin&email=ursula_le_guin%40gmail.com";
 
@@ -53,8 +48,8 @@ async fn subscribe_returns_200_for_valid_form_submission() {
     // Assert
     assert_eq!(200, response.status().as_u16());
 
-    let saved = sqlx::query!("SELECT email, name from subscriptions")
-        .fetch_one(&mut connection)
+    let saved = sqlx::query!("SELECT email, name FROM subscriptions")
+        .fetch_one(&test_app.connection_pool)
         .await
         .expect("Failed to fetch saved subscription");
 
