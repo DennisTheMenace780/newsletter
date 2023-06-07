@@ -1,6 +1,6 @@
 use newsletter::config::get_configuration;
 use newsletter::startup::run;
-use sqlx::{Connection, PgPool};
+use sqlx::PgPool;
 
 use std::net::TcpListener;
 
