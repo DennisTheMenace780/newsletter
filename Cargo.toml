@@ -15,6 +15,7 @@ sqlx = {version = "~0.6", default-features = false, features = ["runtime-actix-r
 config = "0.13.3"
 uuid = {version = "~1", features = ["v4"]}
 chrono = "0.4.15"
+env_logger = "0.10.0"
 
 [dev-dependencies] # not included in packaged binary
 reqwest = "0.11"
